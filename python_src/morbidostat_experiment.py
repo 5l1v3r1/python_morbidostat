@@ -3,9 +3,9 @@ import numpy as np
 from scipy.stats import linregress
 import time,copy,threading,os,sys
 from scipy import stats
+from matplotlib import pyplot as plt
 
- 
-simulator = False
+simulator = True
 if simulator:
     import morbidostat_simulator as morb
 else:
@@ -16,6 +16,7 @@ MORBIDOSTAT_EXPERIMENT = 'M'
 CONTINUOUS_MORBIDOSTAT = 'C'
 GROWTH_RATE_EXPERIMENT = 'G'
 FIXED_OD_EXPERIMENT = 'OD'
+PKPD = 'P'
 
 do_nothing = ("none", -1)
 
@@ -90,6 +91,7 @@ def calibrate_OD(vials = None):
     else:
         print("need measurements for at least two OD standards")
     return fit_parameters, ODs, voltages
+    
 
 def calibrate_pumps(pump_type, vials = None, dt = 10):
     '''
@@ -275,7 +277,7 @@ class morbidostat(object):
     '''
     def __init__(self, vials = range(15), experiment_duration = 2*60*60,
                  target_OD = 1, dilution_factor = 0.9, bug = 'tbd', drugs =[], mics=[],
-                 bottles = [], OD_dt = 30, cycle_dt = 600, experiment_name="tbd", verbose=1):
+                 bottles = [], time_steps = [], inject_conc = [], OD_dt = 30, cycle_dt = 600, experiment_name="tbd", verbose=1):
         # the default experiment is a morbidostat measurement
         self.experiment_type = MORBIDOSTAT_EXPERIMENT
 
@@ -314,6 +316,8 @@ class morbidostat(object):
         self.ndrugs = len(drugs)
         self.nbottles = len(bottles)
         self.bottles = bottles
+        self.time_steps = time_steps
+        self.inject_conc = inject_conc
         self.experiment_name = experiment_name
         self.bug = bug
         self.drug_concentrations = np.zeros((self.nbottles, self.ndrugs))
@@ -685,6 +689,8 @@ class morbidostat(object):
                 pass
             elif self.vial_props[vial]["feedback"] == CONTINUOUS_MORBIDOSTAT:
                 self.continuous_feedback(vial)
+            elif self.vial_props[vial]["feedback"] == PKPD:
+                self.pkpd_feedback()
             else:
                 print "unknown experiment type:", self.experiment_type[vi]
         self.vial_drug_concentration[self.cycle_counter, -1, :] = self.experiment_time()
@@ -874,7 +880,14 @@ class morbidostat(object):
         else:
             self.update_vial_concentration(vial, 1.0, np.zeros(len(self.drugs)))
             self.decisions[self.cycle_counter,vi] = -1.0
-            
+
+    def pkpd_feedback(self):
+        
+        
+        
+
+    def get_time_steps_and_inject_concentration(self):
+        pass
 
 
     def get_vial_bottle_concentrations(self, vial, fi):
@@ -889,7 +902,6 @@ class morbidostat(object):
         vi = self.vials.index(vial)
         fi = self.drugs.index(self.vial_props[vial]['feedback_drug'])
         return (vi,fi)
-
     def lowest_concentration(self, vial,fi):
         '''
         return the pump that pumps the "recovery" medium, i.e. the one with least drug
