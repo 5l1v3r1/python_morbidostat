@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import sys,os, glob, threading, time
+import pandas as pd
 #import wx
 mixing_time = 5
 buffer_time = 10
@@ -11,6 +12,7 @@ class morbidostat_monitor(object):
         if os.path.exists(dir_name):
             self.data_dir = dir_name.rstrip('/')+'/'
             self.read_parameters_file()
+            self.plot_pkpd_table()
             self.data_fig_name = 'Morbidostat'
             self.scan_dt = 10
             self.OD_dir = self.data_dir+'OD/'
@@ -94,6 +96,17 @@ class morbidostat_monitor(object):
                         print "can't parse:", line, entries
         except:
             print "can't read parameters file"
+
+    def plot_pkpd_table(self):
+        pkpd_table = np.loadtxt(self.data_dir+'pkpd_table.dat')
+        time = pkpd_table[0]
+        time_in_hours = (pd.Series(time)/3600).tolist()
+        conc = pkpd_table[1]
+        plt.plot(time_in_hours,conc)
+        plt.ylabel("Injected concentration in ng/ul")
+        plt.xlabel("Time in h")
+        plt.title("Drug profile over 12 hours")
+        plt.show() 
 
     def load_OD_data(self):
         if not os.path.exists(self.lock_file):

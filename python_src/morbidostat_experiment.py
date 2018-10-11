@@ -3,7 +3,9 @@ import numpy as np
 from scipy.stats import linregress
 import time,copy,threading,os,sys
 from scipy import stats
+import scipy.interpolate as spi
 from matplotlib import pyplot as plt
+import pandas as pd
 
 simulator = True
 if simulator:
@@ -316,7 +318,9 @@ class morbidostat(object):
         self.ndrugs = len(drugs)
         self.nbottles = len(bottles)
         self.bottles = bottles
-        self.time_steps = time_steps
+        self.time_steps = ((pd.Series(time_steps))*3600).tolist()
+        self.threshold_time = 0
+        self.iterable = 1
         self.inject_conc = inject_conc
         self.experiment_name = experiment_name
         self.bug = bug
@@ -416,6 +420,7 @@ class morbidostat(object):
         self.cycle_OD_fname = self.base_name+'cycle_OD_estimate.txt'
         self.growth_rate_fname = self.base_name+'growth_rate_estimates.txt'
         self.last_cycle_fname = self.base_name+'OD/'+'current_cycle.dat'
+        self.pkpd_fname = self.base_name+'pkpd_table.dat'
 
         if self.restart_from_file:
             self.load_data_from_file()
@@ -546,6 +551,7 @@ class morbidostat(object):
         np.savetxt(self.temperature_fname, self.temperatures, fmt='%2.1f')
         np.savetxt(self.growth_rate_fname, self.growth_rate_estimate,fmt='%2.6f')
         np.savetxt(self.cycle_OD_fname, self.final_OD_estimate,fmt='%2.3f')
+        np.savetxt(self.pkpd_fname,(self.time_steps,self.inject_conc))
         os.remove(lockfname)
 
     def save_within_cycle_data(self):
@@ -690,7 +696,7 @@ class morbidostat(object):
             elif self.vial_props[vial]["feedback"] == CONTINUOUS_MORBIDOSTAT:
                 self.continuous_feedback(vial)
             elif self.vial_props[vial]["feedback"] == PKPD:
-                self.pkpd_feedback()
+                self.pkpd_feedback(vial)
             else:
                 print "unknown experiment type:", self.experiment_type[vi]
         self.vial_drug_concentration[self.cycle_counter, -1, :] = self.experiment_time()
@@ -864,7 +870,6 @@ class morbidostat(object):
         self.vial_drug_concentration[self.cycle_counter+1,vi] = self.vial_drug_concentration[self.cycle_counter,vi]*dilution +((1.0-dilution)*conc)
         concentration = self.vial_drug_concentration[self.cycle_counter+1,vi] = self.vial_drug_concentration[self.cycle_counter,vi]*dilution +((1.0-dilution)*conc)
 
-        print("concentration", concentration)
         
     def continuous_feedback(self, vial):
         # enumerate all vials
@@ -881,13 +886,48 @@ class morbidostat(object):
             self.update_vial_concentration(vial, 1.0, np.zeros(len(self.drugs)))
             self.decisions[self.cycle_counter,vi] = -1.0
 
-    def pkpd_feedback(self):
-        
+    def pkpd_concentration(self,vial):
+        #find position in time_axis for defined drug profile over 12 hours 
+        vi, fi = self.get_vial_and_drug_index(vial)
+        self.get_time_when_over_dilution_threshold(vial)
+        if self.final_OD_estimate[self.cycle_counter,vi]>self.dilution_threshold:
+            time_scale = self.time_steps
+            current_time = self.experiment_time()-self.threshold_time
+            day_with_12_hours = 43200
+            days = int(current_time/day_with_12_hours)
+            relative_time_scale = int(current_time - days*day_with_12_hours)
+            print(relative_time_scale)
+            #create a function with the drug profile
+            a=spi.interp1d(self.time_steps,self.inject_conc)
+            tmp_conc = a(relative_time_scale)
+            self.dilution_concentration[self.cycle_counter+1, vi] = tmp_conc
+        else:
+            pass
+
+    def pkpd_feedback(self,vial):
+        vi, fi = self.get_vial_and_drug_index(vial)
+        self.pkpd_concentration(vial)
+        #inject the desired concentration
+        if self.final_OD_estimate[self.cycle_counter,vi]>self.dilution_threshold:
+            conc = self.dilution_concentration[self.cycle_counter+1,vi]
+            fractions = self.inject_concentration(vial, conc = conc,
+                                    volume = self.dilution_volume, fi=fi)
+            _, actual_concentration = self.mix_concentration(vial, conc, fi)
+            self.update_vial_concentration(vial, self.dilution_factor, actual_concentration)
+            self.decisions[self.cycle_counter,vi] = actual_concentration
+        else:
+            self.update_vial_concentration(vial, 1.0, np.zeros(len(self.drugs)))
+            self.decisions[self.cycle_counter,vi] = -1.0   
         
         
 
-    def get_time_steps_and_inject_concentration(self):
-        pass
+    def get_time_when_over_dilution_threshold(self,vial):
+        vi, fi = self.get_vial_and_drug_index(vial)
+        if self.final_OD_estimate[self.cycle_counter,vi]>self.dilution_threshold and self.iterable < len(self.vials):
+            self.threshold_time = self.experiment_time()
+            self.iterable +=1
+        else:
+            pass
 
 
     def get_vial_bottle_concentrations(self, vial, fi):
