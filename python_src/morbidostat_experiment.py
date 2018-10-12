@@ -4,7 +4,6 @@ from scipy.stats import linregress
 import time,copy,threading,os,sys
 from scipy import stats
 import scipy.interpolate as spi
-from matplotlib import pyplot as plt
 import pandas as pd
 
 simulator = True
@@ -319,8 +318,8 @@ class morbidostat(object):
         self.nbottles = len(bottles)
         self.bottles = bottles
         self.time_steps = ((pd.Series(time_steps))*3600).tolist()
-        self.threshold_time = 0
-        self.iterable = 1
+        self.threshold_time = [0]*len(vials)
+        self.iterable = [1]*len(vials)
         self.inject_conc = inject_conc
         self.experiment_name = experiment_name
         self.bug = bug
@@ -891,11 +890,13 @@ class morbidostat(object):
         vi, fi = self.get_vial_and_drug_index(vial)
         self.get_time_when_over_dilution_threshold(vial)
         if self.final_OD_estimate[self.cycle_counter,vi]>self.dilution_threshold:
-            time_scale = self.time_steps
-            current_time = self.experiment_time()-self.threshold_time
+            #time_scale = self.time_steps
+            time_after_dilution_threshold = self.experiment_time()-self.threshold_time[vi]
+            print("threshold_time",vi,self.threshold_time[vi])
+            print("current_time",vi,time_after_dilution_threshold)
             day_with_12_hours = 43200
-            days = int(current_time/day_with_12_hours)
-            relative_time_scale = int(current_time - days*day_with_12_hours)
+            days = int(time_after_dilution_threshold/day_with_12_hours)
+            relative_time_scale = int(time_after_dilution_threshold - days*day_with_12_hours)
             print(relative_time_scale)
             #create a function with the drug profile
             a=spi.interp1d(self.time_steps,self.inject_conc)
@@ -906,8 +907,8 @@ class morbidostat(object):
 
     def pkpd_feedback(self,vial):
         vi, fi = self.get_vial_and_drug_index(vial)
-        self.pkpd_concentration(vial)
         #inject the desired concentration
+        self.pkpd_concentration(vial)
         if self.final_OD_estimate[self.cycle_counter,vi]>self.dilution_threshold:
             conc = self.dilution_concentration[self.cycle_counter+1,vi]
             fractions = self.inject_concentration(vial, conc = conc,
@@ -923,9 +924,9 @@ class morbidostat(object):
 
     def get_time_when_over_dilution_threshold(self,vial):
         vi, fi = self.get_vial_and_drug_index(vial)
-        if self.final_OD_estimate[self.cycle_counter,vi]>self.dilution_threshold and self.iterable < len(self.vials):
-            self.threshold_time = self.experiment_time()
-            self.iterable +=1
+        if self.final_OD_estimate[self.cycle_counter,vi]>self.dilution_threshold and self.iterable[vi] == 1:
+            self.threshold_time[vi] = self.experiment_time()
+            self.iterable[vi] = 0
         else:
             pass
 
