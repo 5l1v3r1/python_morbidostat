@@ -319,7 +319,7 @@ class morbidostat(object):
         self.bottles = bottles
         self.time_steps = ((pd.Series(time_steps))*3600).tolist()
         self.threshold_time = [0]*len(vials)
-        self.iterable = [1]*len(vials)
+        self.boolean = [1]*len(vials)
         self.inject_conc = inject_conc
         self.experiment_name = experiment_name
         self.bug = bug
@@ -924,9 +924,9 @@ class morbidostat(object):
 
     def get_time_when_over_dilution_threshold(self,vial):
         vi, fi = self.get_vial_and_drug_index(vial)
-        if self.final_OD_estimate[self.cycle_counter,vi]>self.dilution_threshold and self.iterable[vi] == 1:
+        if self.final_OD_estimate[self.cycle_counter,vi]>self.dilution_threshold and self.boolean[vi] == 1:
             self.threshold_time[vi] = self.experiment_time()
-            self.iterable[vi] = 0
+            self.boolean[vi] = 0
         else:
             pass
 

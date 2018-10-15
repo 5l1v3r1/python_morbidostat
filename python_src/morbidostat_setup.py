@@ -23,14 +23,19 @@ def parse_bottles(entries):
     # entries[0] == bottle name, followed by a list of concentrations
     return {entries[0]:map(float, entries[1:])}
 
+def parse_pkpd(entries):
+    return [float(entries[0]), float(entries[1])]
+
 def parse_vials(entries):
-    return {int(entries[0])-1:{"feedback":entries[1], "bottles":entries[2:-1], "feedback_drug": entries[-1]}}
+    return {int(entries[0])-1:{"feedback":entries[1], "bottles":entries[2:-1], "feedback_drug":entries[-1]}}
+
 
 def parse_config_table(fname):
     parameters = {}
     drugs = []
     vials = {}
     bottles = {}
+    pkpd = []
     with open(fname) as config:
         parse_cat = None
         for line in config:
@@ -52,8 +57,10 @@ def parse_config_table(fname):
                     bottles.update(parse_bottles(entries))
                 elif parse_cat=="vials":
                     vials.update(parse_vials(entries))
+                elif parse_cat=="pkpd":
+                    pkpd.append(parse_pkpd(entries))
 
-    return parameters, drugs, vials, bottles
+    return parameters, drugs, vials, bottles, pkpd
 
 
 if __name__ == '__main__':
@@ -66,7 +73,7 @@ if __name__ == '__main__':
     parser.add_argument('--out', required = False, type = str,  help ="outpath")
     params = parser.parse_args()
 
-    parameters, drugs, vials, bottles = parse_config_table(params.config)
+    parameters, drugs, vials, bottles, pkpd = parse_config_table(params.config)
 
 
 
@@ -80,7 +87,10 @@ if __name__ == '__main__':
                        experiment_name = parameters['name'],
                        drugs = [x[0] for x in drugs],
                        mics = [x[2] for x in drugs],
+                       time_steps = [x[0] for x in pkpd],
+                       inject_conc = [x[1] for x in pkpd],
                        bottles = bottles.keys()
+                       
                        )
 
     morb.set_vial_properties(vials)
