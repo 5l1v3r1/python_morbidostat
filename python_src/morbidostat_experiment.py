@@ -5,7 +5,7 @@ import time,copy,threading,os,sys
 from scipy import stats
 
  
-simulator = True
+simulator = False
 if simulator:
     import morbidostat_simulator as morb
 else:
@@ -841,17 +841,12 @@ class morbidostat(object):
         vial_conc = np.copy(self.vial_drug_concentration[self.cycle_counter, vi])
         print("vial_conc old",vial_conc)
         ignore_dilution_threshold = 0
-        if finalOD<self.dilution_threshold:  # below the low threshold: let them grow, do nothing
-            pass
         if deltaOD>0:
             vial_conc += self.feedback_time_scale*self.mics[fi]*deltaOD/self.target_OD
             vial_conc *= 0.1*self.feedback_time_scale*deviationOD*deltaOD*self.mics[fi]/self.target_OD+2*deltaOD/self.target_OD*self.feedback_time_scale
         elif finalOD<self.dilution_threshold/self.anticipation_threshold and deltaOD<0:
-            if np.copy(self.vial_drug_concentration[self.cycle_counter, vi])>0.25*self.mics[fi]:
-                vial_conc = 0
+            if np.copy(self.vial_drug_concentration[self.cycle_counter, vi])>0.5*self.mics[fi]:
                 ignore_dilution_threshold = 1
-        else:
-                vial_conc =0 
         self.vial_to_inject_concentration(vial,vial_conc,vi)
         return ignore_dilution_threshold  
 
@@ -859,6 +854,7 @@ class morbidostat(object):
     def vial_to_inject_concentration(self,vial,vial_conc,vi):
         old_vial_conc = np.copy(self.vial_drug_concentration[self.cycle_counter, vi])
         target_vial_conc = vial_conc - old_vial_conc
+        print("target_vial_conc",target_vial_conc)
         self.dilution_concentration[self.cycle_counter+1,vi] = target_vial_conc*self.culture_volume/self.dilution_volume
         
         

@@ -21,7 +21,7 @@ pumps = {'pump1': [22, 23, 24, 25, 26,  # 1.1 - 1.5
                    47, 48, 49, 50, 51], # 6.1 - 6.5
          'pump3': [14, 0, 1, 2, 3,      # 7.1 - 7.5
                    4, 5, 6, 7, 8,       # 8.1 - 8.5
-                   9, 10, 11, 12, 13],  # 9.1 - 9.5
+                   3,4,5,6,7],  # 9.1 - 9.5
          'waste': suction_pump}
 
 
@@ -33,7 +33,7 @@ vials_to_pins_assignment = [10, 11, 12, 13, 14, #row 1
 
 
 ####
-morb_path = '/home/morbidostat/morbidostat/python_arduino/'
+morb_path = '/mnt/c/Users/Eric/Documents/Master/Masterarbeit/python_morbidostat/'
 
 ############
 # load calibration parameters
@@ -278,7 +278,7 @@ class morbidostat:
             digital_pin = self.pump_to_pin(pump_type, pump_number)
             if run_time>0:
                 # switch pump on
-                self.switch_pin(digital_pin, True)
+                self.switch_pin(digital_pin, False)
                 # generate a time object to switch the pump off after
                 # the time interval necessary to pump the required volume
                 self.pump_off_threads[(pump_type,pump_number)] = threading.Timer(run_time, self.switch_pin, args=(digital_pin, False))
