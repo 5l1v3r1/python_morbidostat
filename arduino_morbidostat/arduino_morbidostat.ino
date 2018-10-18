@@ -23,7 +23,7 @@ void setup()
   int digital_pin;
   for (digital_pin=0; digital_pin<54; digital_pin++){
     pinMode(digital_pin, OUTPUT);
-    digitalWrite(digital_pin, LOW);    
+    digitalWrite(digital_pin, HIGH);    
   }
 }
 
@@ -66,9 +66,9 @@ void switch_digital(){
   int digital_pin = input_string.substring(1,3).toInt();
   char pin_state = input_string[3];
   if (pin_state=='1'){
-    digitalWrite(digital_pin, HIGH);
+    digitalWrite(digital_pin, LOW);
   }else if (pin_state=='0'){
-    digitalWrite(digital_pin,LOW);
+    digitalWrite(digital_pin,HIGH);
   }else{
     Serial.print("error: switch_digital() received bad pin state: ");
     Serial.println(input_string);

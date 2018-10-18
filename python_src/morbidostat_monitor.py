@@ -21,6 +21,7 @@ class morbidostat_monitor(object):
             self.drug = drug
             self.init_data_plot()
             self.figure_updater = threading.Thread(target = self.update_cycle)
+
             #self.figure_updater.daemon=True
         else:
             print "data directory not found"
@@ -139,6 +140,7 @@ class morbidostat_monitor(object):
                 self.temperature = np.zeros((2,3))
                 self.growth_rate_estimate = np.zeros((2,2))
                 self.OD_estimate = np.zeros((2,2))
+                
         else:
             print "data locked"
 
