@@ -19,9 +19,7 @@ pumps = {'pump1': [22, 23, 24, 25, 26,  # 1.1 - 1.5
          'pump2': [37, 38, 39, 40, 41,  # 4.1 - 4.5
                    42, 43, 44, 45, 46,  # 5.1 - 5.5
                    47, 48, 49, 50, 51], # 6.1 - 6.5
-         'pump3': [14, 0, 1, 2, 3,      # 7.1 - 7.5
-                   4, 5, 6, 7, 8,       # 8.1 - 8.5
-                   3,4,5,6,7],  # 9.1 - 9.5
+         'pump3': [3,4,5,6,7],  # 9.1 - 9.5
          'waste': suction_pump}
 
 
@@ -104,7 +102,7 @@ class morbidostat:
         port_number=0
         while try_next:
             try:
-                self.ser = serial.Serial('/dev/ttyACM'+str(port_number), baudrate, timeout = 1.0)
+                self.ser = serial.Serial('COM3',9600, timeout = 1.0)
                 if self.ser.isOpen():
                     print("Serial /dev/ttyACM"+str(port_number)+" opened")
                     # wait a second to let the serial port get up to speed
@@ -278,7 +276,7 @@ class morbidostat:
             digital_pin = self.pump_to_pin(pump_type, pump_number)
             if run_time>0:
                 # switch pump on
-                self.switch_pin(digital_pin, False)
+                self.switch_pin(digital_pin, True)
                 # generate a time object to switch the pump off after
                 # the time interval necessary to pump the required volume
                 self.pump_off_threads[(pump_type,pump_number)] = threading.Timer(run_time, self.switch_pin, args=(digital_pin, False))
