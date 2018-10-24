@@ -11,7 +11,7 @@ baudrate = 9600
 # arduino pin controlling the IR LEDs via a relais
 light_switch = 22
 thermometer_pin = 4
-suction_pump = 3
+suction_pump = 2
 # dictionary mapping pumps to pins
 pumps = {'pump1': [22, 23, 24, 25, 26,  # 1.1 - 1.5
                    27, 28, 29, 30, 31,  # 2.1 - 2.5
@@ -21,7 +21,7 @@ pumps = {'pump1': [22, 23, 24, 25, 26,  # 1.1 - 1.5
                    47, 48, 49, 50, 51], # 6.1 - 6.5
          'pump3': [3,4,5,6,7],  # 9.1 - 9.5
          'waste': suction_pump}
-
+reset_pin = 12
 
 #vials_to_pins_assignment = [10,5,0, 11,6,1,12,7,2,13,8,3,14,9,4]
 #vials_to_pins_assignment = [0,5,10,1,6,11,2,7,12,3,8,13,4,9,14]
@@ -31,7 +31,7 @@ vials_to_pins_assignment = [10, 11, 12, 13, 14, #row 1
 
 
 ####
-morb_path = '/mnt/c/Users/Eric/Documents/Master/Masterarbeit/python_morbidostat/'
+morb_path = 'Users\Eric\Documents\Master\Masterarbeit\python_morbidostat'
 
 ############
 # load calibration parameters
@@ -212,6 +212,7 @@ class morbidostat:
                 +'{number:0{width}d}'.format(number=dt, width=4) +'\n'
 
             bytes_written = self.atomic_serial_write(command_str)
+            print("serial write",command_str)
             if debug:
                 print(str(time.time())+" out: "+command_str[:-1] + ' bytes_written: '+str(bytes_written))
 
@@ -284,6 +285,12 @@ class morbidostat:
         else:
             print("Serial port is not open")
 
+    def reset_arduino(self):
+        self.switch_pin(reset_pin,True)
+        time.sleep(2)
+        self.switch_pin(reset_pin,False)
+
+
     def run_waste_pump(self, run_time=0.1):
         '''
         run the waste pump for a given amount of time
@@ -309,6 +316,7 @@ class morbidostat:
         '''
         if state:
             command_str = 'D'+'{number:0{width}d}'.format(number=pin_number, width=2) + '1\n'
+            print("command str pump", command_str)
         else:
             command_str = 'D'+'{number:0{width}d}'.format(number=pin_number, width=2) + '0\n'
         bytes_written = self.atomic_serial_write(command_str)

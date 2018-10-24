@@ -23,8 +23,10 @@ void setup()
   int digital_pin;
   for (digital_pin=0; digital_pin<54; digital_pin++){
     pinMode(digital_pin, OUTPUT);
-    digitalWrite(digital_pin, HIGH);    
+    digitalWrite(digital_pin, HIGH);
+    pinMode(12,INPUT_PULLUP);
   }
+  
 }
 
 void measure_analog(){
